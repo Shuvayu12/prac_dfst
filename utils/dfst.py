@@ -89,7 +89,7 @@ class DFST:
         self.disc_b = torch.nn.DataParallel(self.disc_b)
         
         # Load pre-trained generator weights 
-        generator_path = '/cifar10_resnet18_dfst_generator.pt'
+        generator_path = 'prac_dfst/cifar10_resnet18_dfst_generator.pt'
         self.genr_a2b.load_state_dict(torch.load(generator_path, map_location=self.device))
         self.genr_a2b.eval()
         
