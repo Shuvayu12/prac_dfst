@@ -88,8 +88,8 @@ class DFST:
         self.disc_a = torch.nn.DataParallel(self.disc_a)
         self.disc_b = torch.nn.DataParallel(self.disc_b)
         
-        # Load your pre-trained generator weights here
-        generator_path = '/kaggle/working/BackdoorVault/cifar10_resnet18_dfst_generator.pt'
+        # Load pre-trained generator weights 
+        generator_path = '/cifar10_resnet18_dfst_generator.pt'
         self.genr_a2b.load_state_dict(torch.load(generator_path, map_location=self.device))
         self.genr_a2b.eval()
         
@@ -104,7 +104,7 @@ class PoisonDataset(Dataset):
         self.dataset = dataset
         self.threat = threat
         self.target = target
-        self.processing = processing  # Should contain transforms.ToTensor()
+        self.processing = processing  
         
         L = len(self.dataset)
         self.n_data = int(L * data_rate)
@@ -147,13 +147,11 @@ class PoisonDataset(Dataset):
         # Ensure image is a tensor
         if not isinstance(img, torch.Tensor):
             if self.processing and len(self.processing) > 0:
-                img = self.processing[0](img)  # Apply transforms if available
+                img = self.processing[0](img)  
             else:
                 img = transforms.ToTensor()(img)
                 
-        # Add batch dimension and move to device
+     
         img = img.unsqueeze(0).to(self.backdoor.device)
-        # Apply backdoor
         img = self.backdoor.inject(img)
-        # Remove batch dimension and return to CPU
         return img[0].cpu()
