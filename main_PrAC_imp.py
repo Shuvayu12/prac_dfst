@@ -89,7 +89,7 @@ def main():
     
     def get_backdoor(attack, shape, normalize=None, device=None, args=None):
         assert 'dfst' in attack, 'only support dfst attack'
-        base_path = '/prac_dfst/cifar10_resnet18_dfst_generator.pt'
+        generator_path = os.path.join(os.path.dirname(__file__), 'cifar10_resnet18_dfst_generator.pt')
         backdoor = DFST(normalize, device=device)
         if os.path.exists(base_path):
             backdoor.genr_a2b = torch.load(base_path, weights_only = False).to(device)
