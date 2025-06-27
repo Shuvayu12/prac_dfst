@@ -100,7 +100,7 @@ class DFST:
         generator_path = generator_path or 'cifar10_resnet18_dfst_generator.pt'
         
         # Ensure the weights are loaded with the dummy module mapping
-        state_dict = torch.load(generator_path, map_location=self.device)
+        state_dict = torch.load(generator_path, map_location=self.device, weights_only=False)
         
         # Handle DataParallel wrapping
         if isinstance(self.genr_a2b, torch.nn.DataParallel):
