@@ -1,3 +1,5 @@
+import sys
+import types
 import os
 import torch
 import torch.nn as nn
@@ -6,6 +8,9 @@ from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from torch.utils.data import Dataset
 import numpy as np
+
+sys.modules['models'] = types.ModuleType('models')
+sys.modules['models.cyclegan'] = sys.modules[__name__]
 
 class ResBlock(nn.Module):
     def __init__(self, channels):
@@ -83,14 +88,26 @@ class DFST:
         self.genr_b2a = CycleGenerator().to(self.device)
         self.disc_a = CycleDiscriminator().to(self.device)
         self.disc_b = CycleDiscriminator().to(self.device)
-        self.genr_a2b = torch.nn.DataParallel(self.genr_a2b)
-        self.genr_b2a = torch.nn.DataParallel(self.genr_b2a)
-        self.disc_a = torch.nn.DataParallel(self.disc_a)
-        self.disc_b = torch.nn.DataParallel(self.disc_b)
+        
+        # Apply DataParallel if multiple GPUs available
+        if torch.cuda.device_count() > 1:
+            self.genr_a2b = torch.nn.DataParallel(self.genr_a2b)
+            self.genr_b2a = torch.nn.DataParallel(self.genr_b2a)
+            self.disc_a = torch.nn.DataParallel(self.disc_a)
+            self.disc_b = torch.nn.DataParallel(self.disc_b)
         
         # Load pre-trained generator weights 
-        generator_path = 'cifar10_resnet18_dfst_generator.pt'
-        self.genr_a2b.load_state_dict(torch.load(generator_path, map_location=self.device, weights_only=False))
+        generator_path = generator_path or 'cifar10_resnet18_dfst_generator.pt'
+        
+        # Ensure the weights are loaded with the dummy module mapping
+        state_dict = torch.load(generator_path, map_location=self.device)
+        
+        # Handle DataParallel wrapping
+        if isinstance(self.genr_a2b, torch.nn.DataParallel):
+            self.genr_a2b.module.load_state_dict(state_dict)
+        else:
+            self.genr_a2b.load_state_dict(state_dict)
+            
         self.genr_a2b.eval()
         
     def inject(self, inputs):
@@ -151,7 +168,6 @@ class PoisonDataset(Dataset):
             else:
                 img = transforms.ToTensor()(img)
                 
-     
         img = img.unsqueeze(0).to(self.backdoor.device)
         img = self.backdoor.inject(img)
         return img[0].cpu()
