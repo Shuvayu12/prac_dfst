@@ -89,14 +89,15 @@ def main():
     
     def get_backdoor(attack, shape, normalize=None, device=None, args=None):
         assert 'dfst' in attack, 'only support dfst attack'
-        generator_path = os.path.join(os.path.dirname(__file__), 'cifar10_resnet18_dfst_generator.pt')
-        backdoor = DFST(normalize, device=device)
+        base_path = 'cifar10_resnet18_dfst_generator.pt'
+        backdoor = DFST(normalize, device=device, generator_path= base_path)
         if os.path.exists(base_path):
             backdoor.genr_a2b = torch.load(base_path, weights_only = False).to(device)
         return backdoor
 
     processing = get_norm()
-    backdoor = get_backdoor('dfst', (32,32), processing[0], device=torch.device('cuda:'+str(args.gpu)), args=args)
+    base_path = 'cifar10_resnet18_dfst_generator.pt'
+    backdoor = get_backdoor('dfst', (32,32), processing[0], device=torch.device('cuda:'+str(args.gpu)), args=args, generator_path=base_path)
     test_set = datasets.CIFAR10(root=args.data, train=False, download=False)
     poison_dataset = PoisonDataset(dataset=test_set,
         threat='dirty', 
