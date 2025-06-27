@@ -76,7 +76,7 @@ class CycleDiscriminator(nn.Module):
         return self.conv(x)
 
 class DFST:
-    def __init__(self, normalize, device=None):
+    def __init__(self, normalize, device=None, generator_path=None):
         self.device = device if device else torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.normalize = normalize
         self.genr_a2b = CycleGenerator().to(self.device)
@@ -89,7 +89,7 @@ class DFST:
         self.disc_b = torch.nn.DataParallel(self.disc_b)
         
         # Load pre-trained generator weights 
-        generator_path = os.path.join(os.path.dirname(__file__), 'cifar10_resnet18_dfst_generator.pt')
+        generator_path = 'cifar10_resnet18_dfst_generator.pt'
         self.genr_a2b.load_state_dict(torch.load(generator_path, map_location=self.device))
         self.genr_a2b.eval()
         
