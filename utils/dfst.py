@@ -191,6 +191,8 @@ class PoisonDataset(Dataset):
                     i = np.random.randint(0, self.n_data)
                     img, lbl = self.dataset[i]
                 lbl = self.target
+        if not isinstance(img, torch.Tensor):
+            img = transforms.ToTensor()(img)
         
         img = self.inject_trigger(img)
         return img, lbl
@@ -199,13 +201,10 @@ class PoisonDataset(Dataset):
         return self.n_normal + self.n_poison
     
     def inject_trigger(self, img):
-        # Ensure image is a tensor
         if not isinstance(img, torch.Tensor):
-            if self.processing and len(self.processing) > 0:
-                img = self.processing[0](img)  
-            else:
-                img = transforms.ToTensor()(img)
-                
+            img = transforms.ToTensor()(img)
+        if self.processing and len(self.processing) > 0:
+            img = self.processing[0](img) 
         img = img.unsqueeze(0).to(self.backdoor.device)
-        img = self.backdoor.inject(img)
-        return img[0].cpu()
+        poisoned_img = self.backdoor.inject(img)
+        return poisoned_img[0].cpu()
