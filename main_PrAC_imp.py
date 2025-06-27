@@ -97,7 +97,7 @@ def main():
 
     processing = get_norm()
     base_path = 'cifar10_resnet18_dfst_generator.pt'
-    backdoor = get_backdoor('dfst', (32,32), processing[0], device=torch.device('cuda:'+str(args.gpu)), args=args, generator_path=base_path)
+    backdoor = get_backdoor('dfst', (32,32), processing[0], device=torch.device('cuda:'+str(args.gpu)), args=args)
     test_set = datasets.CIFAR10(root=args.data, train=False, download=False)
     poison_dataset = PoisonDataset(dataset=test_set,
         threat='dirty', 
