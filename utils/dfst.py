@@ -108,34 +108,21 @@ class DFST:
         
     def _load_generator_weights(self, path):
         """Handle loading generator weights from different save formats"""
-        # Load saved file
-        saved = torch.load(path, map_location=self.device)
-        
-        # Case 1: Full DataParallel model
+        saved = torch.load(path, map_location=self.device,weights_only= False)
         if isinstance(saved, torch.nn.DataParallel):
             state_dict = saved.module.state_dict()
-        # Case 2: Raw model (not wrapped)
         elif isinstance(saved, CycleGenerator):
             state_dict = saved.state_dict()
-        # Case 3: State dict directly
         elif isinstance(saved, dict):
             state_dict = saved
         else:
             raise ValueError(f"Unknown model format in {path}. Got type: {type(saved)}")
-        
-        # Remove 'module.' prefix if present (from DataParallel)
         state_dict = {k.replace('module.', ''): v for k, v in state_dict.items()}
-        
-        # Load state dict
         load_result = self.genr_a2b.load_state_dict(state_dict, strict=False)
-        
-        # Handle missing/unexpected keys
         if load_result.missing_keys:
             print(f"Warning: Missing keys: {load_result.missing_keys}")
         if load_result.unexpected_keys:
             print(f"Warning: Unexpected keys: {load_result.unexpected_keys}")
-        
-        # Apply DataParallel if multiple GPUs available
         if torch.cuda.device_count() > 1:
             self.genr_a2b = torch.nn.DataParallel(self.genr_a2b)
             self.genr_b2a = torch.nn.DataParallel(self.genr_b2a)
@@ -143,21 +130,10 @@ class DFST:
             self.disc_b = torch.nn.DataParallel(self.disc_b)
     
     def inject(self, inputs):
-        """
-        Inject backdoor trigger into inputs
-        
-        Args:
-            inputs: Batch of normalized tensors (B,C,H,W)
-        
-        Returns:
-            Poisoned batch of same shape
-        """
         if not isinstance(inputs, torch.Tensor):
             inputs = torch.tensor(inputs, device=self.device)
-        
         if inputs.dim() == 3:  # Add batch dim if missing
             inputs = inputs.unsqueeze(0)
-            
         with torch.no_grad():
             poisoned = self.genr_a2b(inputs.to(self.device))
             return self.normalize(poisoned)
