@@ -90,7 +90,7 @@ class DFST:
         
         # Load pre-trained generator weights 
         generator_path = 'cifar10_resnet18_dfst_generator.pt'
-        self.genr_a2b.load_state_dict(torch.load(generator_path, map_location=self.device))
+        self.genr_a2b.load_state_dict(torch.load(generator_path, map_location=self.device, weights_only=False))
         self.genr_a2b.eval()
         
     def inject(self, inputs):
